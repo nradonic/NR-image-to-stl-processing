@@ -1,0 +1,25 @@
+TODO - Image Processor Future Improvements
+==========================================
+
+November 5th, 2025
+✓ COMPLETED - better interpolation function
+    - Implemented bilinear interpolation for upscaling (smooth gradients)
+    - Implemented area averaging (box filter) for downscaling
+    - Averages all pixels in overlapping source range or target area
+    - Much better quality than nearest-neighbor
+
+✓ COMPLETED - UI improvements
+    - Display loaded filename under Load button
+    - Turn off function acknowledgement dialogs (silent operations)
+    - Display selected source image name from log list
+    - Visual indicator shows which image is currently selected as source
+    - Reopen closed windows when selecting from log
+
+Future Ideas:
+- Additional filters (blur, sharpen, edge detection)
+- Brightness/contrast adjustments
+- Rotation and flip operations
+- Histogram equalization
+- Batch processing multiple images
+- Undo/Redo functionality
+
