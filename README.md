@@ -1,4 +1,4 @@
-Converts images to STL files for 3D printing. Image formatting and resizing and STL file export.
+Converts images to STL files for 3D printing. Image formatting and resizing and STL file export, here shown on a Bambu processor screen.
 Java language. Cleanup of code with a lot of assistence from Anthropic Claude. 
 
 Claude still needs a lot of hand holding, and guided revisions. But useful too. It breaks on the weirest things, like 
