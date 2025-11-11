@@ -9,3 +9,5 @@ The resultant STL files are simplified to surfaces, but may not be most compress
 
 Nick Radonic
 Nov 2025
+
+![Screenshot](https://github.com/nradonic/NR-image-to-stl-processing/blob/main/Screenshot%202025-11-11%20at%202.55.21%E2%80%AFPM.jpg)
