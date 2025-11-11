@@ -26,7 +26,8 @@ public class Vector3 {
         if (length == 0) return new Vector3(0, 0, 1);
         return new Vector3(x / length, y / length, z / length);
     }
-    
+
+
     @Override
     public String toString() {
         return String.format("(%.2f, %.2f, %.2f)", x, y, z);
