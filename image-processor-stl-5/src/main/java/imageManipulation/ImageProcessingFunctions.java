@@ -2,30 +2,31 @@ package imageManipulation;
 
 /**
  * Contains all image processing algorithms.
+ * All functions use byte[][][] for memory efficiency with proper masking (& 0xFF).
  */
 public class ImageProcessingFunctions {
     
     /**
      * Posterize an image to 4 color levels: 0, 85, 170, 255
      */
-    public static int[][][] posterize(int[][][] source) {
+    public static byte[][][] posterize(byte[][][] source) {
         int height = source.length;
         int width = source[0].length;
-        int[][][] result = new int[height][width][3];
+        byte[][][] result = new byte[height][width][3];
         
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 for (int c = 0; c < 3; c++) {
-                    int value = source[y][x][c];
+                    int value = source[y][x][c] & 0xFF; // Mask to get 0-255
                     // Round to nearest level: 0, 85, 170, 255
                     if (value < 43) {
-                        result[y][x][c] = 0;
+                        result[y][x][c] = (byte)0;
                     } else if (value < 128) {
-                        result[y][x][c] = 85;
+                        result[y][x][c] = (byte)85;
                     } else if (value < 213) {
-                        result[y][x][c] = 170;
+                        result[y][x][c] = (byte)170;
                     } else {
-                        result[y][x][c] = 255;
+                        result[y][x][c] = (byte)255;
                     }
                 }
             }
@@ -36,17 +37,21 @@ public class ImageProcessingFunctions {
     /**
      * Convert image to monochrome by averaging RGB components.
      */
-    public static int[][][] monochrome(int[][][] source) {
+    public static byte[][][] monochrome(byte[][][] source) {
         int height = source.length;
         int width = source[0].length;
-        int[][][] result = new int[height][width][3];
+        byte[][][] result = new byte[height][width][3];
         
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                int avg = (source[y][x][0] + source[y][x][1] + source[y][x][2]) / 3;
-                result[y][x][0] = avg;
-                result[y][x][1] = avg;
-                result[y][x][2] = avg;
+                int r = source[y][x][0] & 0xFF;
+                int g = source[y][x][1] & 0xFF;
+                int b = source[y][x][2] & 0xFF;
+                int avg = (r + g + b) / 3;
+                byte avgByte = (byte)avg;
+                result[y][x][0] = avgByte;
+                result[y][x][1] = avgByte;
+                result[y][x][2] = avgByte;
             }
         }
         return result;
@@ -56,10 +61,10 @@ public class ImageProcessingFunctions {
      * Scale image to new dimensions using high-quality interpolation.
      * Uses bilinear interpolation for upscaling and area averaging (box filter) for downscaling.
      */
-    public static int[][][] scale(int[][][] source, int newWidth, int newHeight) {
+    public static byte[][][] scale(byte[][][] source, int newWidth, int newHeight) {
         int srcHeight = source.length;
         int srcWidth = source[0].length;
-        int[][][] result = new int[newHeight][newWidth][3];
+        byte[][][] result = new byte[newHeight][newWidth][3];
         
         // Determine if we're upscaling or downscaling
         boolean isUpscaling = (newWidth > srcWidth) || (newHeight > srcHeight);
@@ -78,7 +83,7 @@ public class ImageProcessingFunctions {
     /**
      * Bilinear interpolation for upscaling - smooth gradients between pixels.
      */
-    private static void scaleWithBilinear(int[][][] source, int[][][] result, 
+    private static void scaleWithBilinear(byte[][][] source, byte[][][] result, 
                                            int srcWidth, int srcHeight, 
                                            int newWidth, int newHeight) {
         for (int y = 0; y < newHeight; y++) {
@@ -103,10 +108,10 @@ public class ImageProcessingFunctions {
                 
                 // Bilinear interpolation for each color channel
                 for (int c = 0; c < 3; c++) {
-                    double val00 = source[y0][x0][c];
-                    double val10 = source[y0][x1][c];
-                    double val01 = source[y1][x0][c];
-                    double val11 = source[y1][x1][c];
+                    double val00 = source[y0][x0][c] & 0xFF; // Mask bytes
+                    double val10 = source[y0][x1][c] & 0xFF;
+                    double val01 = source[y1][x0][c] & 0xFF;
+                    double val11 = source[y1][x1][c] & 0xFF;
                     
                     // Interpolate horizontally
                     double valTop = val00 * (1 - wx) + val10 * wx;
@@ -115,7 +120,7 @@ public class ImageProcessingFunctions {
                     // Interpolate vertically
                     double finalVal = valTop * (1 - wy) + valBottom * wy;
                     
-                    result[y][x][c] = (int) Math.round(finalVal);
+                    result[y][x][c] = (byte)Math.round(finalVal);
                 }
             }
         }
@@ -125,7 +130,7 @@ public class ImageProcessingFunctions {
      * Area averaging (box filter) for downscaling - averages all contributing source pixels.
      * This produces much better quality than nearest-neighbor when reducing image size.
      */
-    private static void scaleWithAreaAveraging(int[][][] source, int[][][] result,
+    private static void scaleWithAreaAveraging(byte[][][] source, byte[][][] result,
                                                int srcWidth, int srcHeight,
                                                int newWidth, int newHeight) {
         // Calculate the ratio of source to destination
@@ -163,9 +168,9 @@ public class ImageProcessingFunctions {
                         double yOverlap = Math.min(srcY1, sy + 1) - Math.max(srcY0, sy);
                         double weight = xOverlap * yOverlap;
                         
-                        // Add weighted contribution of this pixel
+                        // Add weighted contribution of this pixel (with masking)
                         for (int c = 0; c < 3; c++) {
-                            colorSum[c] += source[sy][sx][c] * weight;
+                            colorSum[c] += (source[sy][sx][c] & 0xFF) * weight;
                         }
                         totalWeight += weight;
                     }
@@ -173,9 +178,9 @@ public class ImageProcessingFunctions {
                 
                 // Calculate final color by dividing by total weight
                 for (int c = 0; c < 3; c++) {
-                    result[destY][destX][c] = (int) Math.round(colorSum[c] / totalWeight);
-                    // Clamp to valid range
-                    result[destY][destX][c] = Math.max(0, Math.min(255, result[destY][destX][c]));
+                    int finalValue = (int) Math.round(colorSum[c] / totalWeight);
+                    // Clamp to valid range and store as byte
+                    result[destY][destX][c] = (byte)Math.max(0, Math.min(255, finalValue));
                 }
             }
         }

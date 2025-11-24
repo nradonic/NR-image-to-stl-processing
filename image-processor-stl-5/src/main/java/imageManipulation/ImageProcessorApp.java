@@ -50,9 +50,9 @@ public class ImageProcessorApp {
             try {
                 BufferedImage img = ImageIO.read(selectedFile);
                 if (img != null) {
-                    int[][][] imageArray = ImageConverter.bufferedImageToArray(img);
-                    int width = imageArray.length;
-                    int height = imageArray[0].length;
+                    byte[][][] imageArray = ImageConverter.bufferedImageToArray(img);
+                    int height = imageArray.length;
+                    int width = imageArray[0].length;
 
                     imageData.reset();
                     imageData.setInitialImage(imageArray);
@@ -141,8 +141,8 @@ public class ImageProcessorApp {
             return;
         }
 
-        int[][][] currentImage = imageData.getCurrentImage();
-        int[][][] result = ImageProcessingFunctions.posterize(currentImage);
+        byte[][][] currentImage = imageData.getCurrentImage();
+        byte[][][] result = ImageProcessingFunctions.posterize(currentImage);
         int sourceSeq = imageData.getCurrentSequenceNumber();
         int newSeq = imageData.getNextSequenceNumber();
 
@@ -162,8 +162,8 @@ public class ImageProcessorApp {
             return;
         }
 
-        int[][][] currentImage = imageData.getCurrentImage();
-        int[][][] result = ImageProcessingFunctions.monochrome(currentImage);
+        byte[][][] currentImage = imageData.getCurrentImage();
+        byte[][][] result = ImageProcessingFunctions.monochrome(currentImage);
         int sourceSeq = imageData.getCurrentSequenceNumber();
         int newSeq = imageData.getNextSequenceNumber();
         int height = currentImage.length;
@@ -182,7 +182,7 @@ public class ImageProcessorApp {
             return;
         }
 
-        int[][][] currentImage = imageData.getCurrentImage();
+        byte[][][] currentImage = imageData.getCurrentImage();
         int currentWidth = currentImage[0].length;
         int currentHeight = imageData.getCurrentImage().length;
 
@@ -210,7 +210,7 @@ public class ImageProcessorApp {
                     return;
                 }
 
-                int[][][] scaled = ImageProcessingFunctions.scale(imageData.getCurrentImage(), newWidth, newHeight);
+                byte[][][] scaled = ImageProcessingFunctions.scale(imageData.getCurrentImage(), newWidth, newHeight);
                 int sourceSeq = imageData.getCurrentSequenceNumber();
                 int newSeq = imageData.getNextSequenceNumber();
 
@@ -241,7 +241,7 @@ public class ImageProcessorApp {
         }
 
         // Get current image dimensions
-        int[][][] currentImage = imageData.getCurrentImage();
+        byte[][][] currentImage = imageData.getCurrentImage();
         int imageHeight = currentImage.length;
         int imageWidth = currentImage[0].length;
 
@@ -301,7 +301,7 @@ public class ImageProcessorApp {
             // Convert 2D RGB image to 3D voxel array
             System.out.println("\n--- IMAGE TO VOXEL CONVERSION ---");
             long voxelStart = System.nanoTime();
-            int[][][] rgbImage = imageData.getCurrentImage();
+            byte[][][] rgbImage = imageData.getCurrentImage();
             boolean[][][] voxelData = convertImageToVoxels(rgbImage, invertHeights, flipLeftRight);
             long voxelTime = (System.nanoTime() - voxelStart) / 1_000_000;
             System.out.println("[TIMING] Image to voxel conversion: " + voxelTime + " ms");
@@ -394,7 +394,7 @@ public class ImageProcessorApp {
      * @param flipLeftRight If true, flip the image horizontally (mirror left-right)
      * @return 3D voxel array [width][height][depth] where false=empty, true=filled
      */
-    private boolean[][][] convertImageToVoxels(int[][][] rgbImage, boolean invertHeights, boolean flipLeftRight) {
+    private boolean[][][] convertImageToVoxels(byte[][][] rgbImage, boolean invertHeights, boolean flipLeftRight) {
         long conversionStart = System.nanoTime();
 
         int imgHeight = rgbImage.length;
@@ -420,9 +420,9 @@ public class ImageProcessorApp {
 
         for (int y = 0; y < imgHeight; y++) {
             for (int x = 0; x < imgWidth; x++) {
-                int r = rgbImage[y][x][0];
-                int g = rgbImage[y][x][1];
-                int b = rgbImage[y][x][2];
+                int r = rgbImage[y][x][0] & 0xFF; // Mask to get 0-255
+                int g = rgbImage[y][x][1] & 0xFF;
+                int b = rgbImage[y][x][2] & 0xFF;
 
                 // Calculate brightness (0-255)
                 int brightness = (r + g + b) / 3;
@@ -479,7 +479,7 @@ public class ImageProcessorApp {
                 int selectedSeq = functionLog.extractSequenceNumber(logEntry);
 
                 if (selectedSeq > 0) {
-                    int[][][] image = imageData.getImageBySequence(selectedSeq);
+                    byte[][][] image = imageData.getImageBySequence(selectedSeq);
                     if (image != null) {
                         imageData.setCurrentImage(image);
                         imageData.setCurrentSequenceNumber(selectedSeq);

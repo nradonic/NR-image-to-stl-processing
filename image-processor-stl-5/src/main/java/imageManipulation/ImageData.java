@@ -5,12 +5,13 @@ import java.util.List;
 
 /**
  * Manages image data, history, and current state.
+ * Uses byte[][][] for 4x memory reduction (86 MB vs 343 MB for 6000x5000 images)
  */
 public class ImageData {
-    private int[][][] currentImage; // [height][width][RGB]
+    private byte[][][] currentImage; // [height][width][RGB]
     private int sequenceNumber;
     private int currentSequenceNumber;
-    private List<int[][][]> imageHistory;
+    private List<byte[][][]> imageHistory;
     
     public ImageData() {
         this.sequenceNumber = 1;
@@ -26,25 +27,25 @@ public class ImageData {
         imageHistory.add(null); // Index 0 unused
     }
     
-    public void setInitialImage(int[][][] image) {
+    public void setInitialImage(byte[][][] image) {
         currentImage = image;
         currentSequenceNumber = 1;
         imageHistory.add(image); // Index 1 is the input image
         sequenceNumber = 2; // Next operation should be sequence 2
     }
     
-    public void addProcessedImage(int[][][] image) {
+    public void addProcessedImage(byte[][][] image) {
         currentImage = image;
         imageHistory.add(image);
         currentSequenceNumber = sequenceNumber;
         sequenceNumber++;
     }
     
-    public int[][][] getCurrentImage() {
+    public byte[][][] getCurrentImage() {
         return currentImage;
     }
     
-    public void setCurrentImage(int[][][] image) {
+    public void setCurrentImage(byte[][][] image) {
         this.currentImage = image;
     }
     
@@ -64,7 +65,7 @@ public class ImageData {
         sequenceNumber++;
     }
     
-    public int[][][] getImageBySequence(int seqNum) {
+    public byte[][][] getImageBySequence(int seqNum) {
         if (seqNum > 0 && seqNum < imageHistory.size()) {
             return imageHistory.get(seqNum);
         }

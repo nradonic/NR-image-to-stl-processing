@@ -37,13 +37,13 @@ public class WindowManager {
         windowsBySequence.clear();
     }
 
-    public ImageDisplayWindow createAndShowWindow(int[][][] imageArray, String functionName,
+    public ImageDisplayWindow createAndShowWindow(byte[][][] imageArray, String functionName,
                                                   int seqNum, int sourceSeqNum, String fileName) {
         this.fileName = fileName;
         return createAndShowWindow(imageArray, functionName, seqNum, sourceSeqNum);
     }
 
-    public ImageDisplayWindow createAndShowWindow(int[][][] imageArray, String functionName,
+    public ImageDisplayWindow createAndShowWindow(byte[][][] imageArray, String functionName,
                                                   int seqNum, int sourceSeqNum) {
         ImageDisplayWindow window = new ImageDisplayWindow(imageArray, functionName, seqNum, sourceSeqNum, fileName);
         window.setVisible(true);
