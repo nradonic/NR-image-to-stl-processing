@@ -32,10 +32,10 @@ public class FunctionLog {
         return entries.size();
     }
     
-    public List<String> getAllEntries() {
-        return new ArrayList<>(entries);
-    }
-    
+//    public List<String> getAllEntries() {
+//        return new ArrayList<>(entries);
+//    }
+//
     /**
      * Extracts the sequence number from a log entry.
      * Format: "FunctionName - N" or "FunctionName - N (from M)"

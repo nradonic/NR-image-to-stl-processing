@@ -224,7 +224,7 @@ public class ControlPanel extends JFrame {
         }
     }
     
-    public void setSourceImage(String sourceInfo) {
+    public void setSourceText(String sourceInfo) {
         sourceLabel.setText("Source: " + sourceInfo);
     }
     

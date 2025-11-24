@@ -11,10 +11,10 @@ public class ImageDisplayWindow extends JFrame {
     private static final int MAX_DISPLAY_SIZE = 2000;
     private static final int MIN_DISPLAY_SIZE = 500;
     
-    private BufferedImage image;
-    
-    public ImageDisplayWindow(int[][][] imageArray, String functionName, int seqNum, int sourceSeqNum) {
-        super(buildTitle(functionName, seqNum, sourceSeqNum, imageArray));
+    private final BufferedImage image;
+
+    public ImageDisplayWindow(int[][][] imageArray, String functionName, int seqNum, int sourceSeqNum, String fileName) {
+        super(buildTitle(functionName, seqNum, sourceSeqNum, imageArray, fileName));
         
         this.image = ImageConverter.arrayToBufferedImage(imageArray);
         
@@ -29,14 +29,14 @@ public class ImageDisplayWindow extends JFrame {
         setLocationRelativeTo(null);
     }
     
-    private static String buildTitle(String functionName, int seqNum, int sourceSeqNum, int[][][] imageArray) {
+    private static String buildTitle(String functionName, int seqNum, int sourceSeqNum, int[][][] imageArray, String fileName) {
         int width = imageArray[0].length;
         int height = imageArray.length;
         
         if (sourceSeqNum > 0) {
-            return functionName + " - " + seqNum + " (from " + sourceSeqNum + ") (" + width + "x" + height + ")";
+            return functionName + " - " + seqNum + " (from " + sourceSeqNum + ") ( " + width + " x " + height + " )";
         } else {
-            return functionName + " - " + seqNum + " (" + width + "x" + height + ")";
+            return functionName + " - " + seqNum + " ( " + fileName + " )"+ " ( " + width + " x " + height + " )";
         }
     }
     

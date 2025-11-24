@@ -51,6 +51,8 @@ public class ImageProcessorApp {
                 BufferedImage img = ImageIO.read(selectedFile);
                 if (img != null) {
                     int[][][] imageArray = ImageConverter.bufferedImageToArray(img);
+                    int width = imageArray.length;
+                    int height = imageArray[0].length;
 
                     imageData.reset();
                     imageData.setInitialImage(imageArray);
@@ -58,11 +60,12 @@ public class ImageProcessorApp {
                     functionLog.clear();
                     windowManager.clear();
                     controlPanel.clearLog();
-                    controlPanel.setFilename(selectedFile.getName());
+                    String fileName = selectedFile.getName();
+                    controlPanel.setFilename(fileName);
                     controlPanel.resetSourceImage();
 
-                    windowManager.createAndShowWindow(imageArray, "Input", 1, 0);
-                    logFunction("Input - 1");
+                    windowManager.createAndShowWindow(imageArray, "Input", 1, 0, fileName);
+                    logFunction("Input - " + imageData.getCurrentSequenceNumber() + " ( " + fileName + " ) - " + width + " x " + height);
                 } else {
                     showError(parent, "Failed to load image", "Error");
                 }
@@ -148,7 +151,9 @@ public class ImageProcessorApp {
 
         imageData.addProcessedImage(result);
         windowManager.createAndShowWindow(result, "Posterize", newSeq, sourceSeq);
-        logFunction("Posterize - " + newSeq + " (from " + sourceSeq + ") - " + width + "x" + height);
+        String logData = "Posterize - " + newSeq + " (from " + sourceSeq + ") - " + width + " x " + height;
+        logFunction(logData);
+        updateSourceLabel(logData);
     }
 
     public void applyMonochrome(JFrame parent) {
@@ -157,13 +162,18 @@ public class ImageProcessorApp {
             return;
         }
 
-        int[][][] result = ImageProcessingFunctions.monochrome(imageData.getCurrentImage());
+        int[][][] currentImage = imageData.getCurrentImage();
+        int[][][] result = ImageProcessingFunctions.monochrome(currentImage);
         int sourceSeq = imageData.getCurrentSequenceNumber();
         int newSeq = imageData.getNextSequenceNumber();
+        int height = currentImage.length;
+        int width = currentImage[0].length;
 
         imageData.addProcessedImage(result);
         windowManager.createAndShowWindow(result, "Monochrome", newSeq, sourceSeq);
-        logFunction("Monochrome - " + newSeq + " (from " + sourceSeq + ")");
+        String logData = "Monochrome - " + newSeq + " (from " + sourceSeq + ") - " + width + " x " + height;
+        logFunction(logData);
+        updateSourceLabel(logData);
     }
 
     public void applyScale(JFrame parent) {
@@ -172,7 +182,8 @@ public class ImageProcessorApp {
             return;
         }
 
-        int currentWidth = imageData.getCurrentImage()[0].length;
+        int[][][] currentImage = imageData.getCurrentImage();
+        int currentWidth = currentImage[0].length;
         int currentHeight = imageData.getCurrentImage().length;
 
         JPanel panel = new JPanel(new java.awt.GridLayout(2, 2, 5, 5));
@@ -205,7 +216,9 @@ public class ImageProcessorApp {
 
                 imageData.addProcessedImage(scaled);
                 windowManager.createAndShowWindow(scaled, "Scale", newSeq, sourceSeq);
-                logFunction("Scale - " + newSeq + " (from " + sourceSeq + ") (" + newWidth + "x" + newHeight + ")");
+                String logData = "Scale - " + newSeq + " (from " + sourceSeq + ") - " + newWidth + " x " + newHeight;
+                logFunction(logData);
+                updateSourceLabel(logData);
             } catch (NumberFormatException ex) {
                 showError(parent, "Please enter valid numbers", "Invalid Input");
             }
@@ -356,7 +369,7 @@ public class ImageProcessorApp {
                             showInfo(parent, "Successfully exported to:\n" + finalFile.getName(),
                                     "Export Complete");
                             logFunction("Export to STL - Source " + sourceNumber + " - " + finalFile.getName() +
-                                    " (" + width + "x" + height + "x" + thickness + "mm)");
+                                    " (" + width + " x " + height + " x " + thickness + "mm)");
                         } else {
                             showError(parent, "Failed to export STL file", "Export Error");
                         }
@@ -390,7 +403,7 @@ public class ImageProcessorApp {
         // Determine max depth based on the brightest pixel
         int maxDepth = 64; // Default depth for voxel extrusion
 
-        System.out.println("Converting " + imgWidth + "x" + imgHeight +
+        System.out.println("Converting " + imgWidth + " x " + imgHeight +
                 " image to voxel array (depth: " + maxDepth + ")");
         System.out.println("Height mapping: " + (invertHeights ? "White = Highest" : "Black = Highest (default)"));
         System.out.println("Horizontal flip: " + (flipLeftRight ? "Enabled" : "Disabled (mirrored by default)"));
@@ -471,7 +484,7 @@ public class ImageProcessorApp {
                         imageData.setCurrentImage(image);
                         imageData.setCurrentSequenceNumber(selectedSeq);
                         // Update source label to show selection
-                        controlPanel.setSourceImage(logEntry);
+                        controlPanel.setSourceText(logEntry);
 
                         // If window was closed, reopen it
                         if (!windowManager.isWindowOpen(selectedSeq)) {
@@ -497,6 +510,10 @@ public class ImageProcessorApp {
     private void logFunction(String entry) {
         functionLog.addEntry(entry);
         controlPanel.appendToLog(entry);
+    }
+
+    private void updateSourceLabel(String logData) {
+        controlPanel.setSourceText(logData);
     }
 
     // ===== Dialog Helpers =====
