@@ -1,17 +1,17 @@
 package imageManipulation;
 
+import org.openjdk.jol.info.GraphLayout;
+import toSTL.DimensionDialog;
+import toSTL.STLWriter;
+import toSTL.Triangle;
+import toSTL.VoxelToSTL;
+
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-
-import toSTL.VoxelToSTL;
-import toSTL.DimensionDialog;
-import toSTL.Triangle;
-import toSTL.STLWriter;
-
 import java.util.List;
 
 /**
@@ -49,13 +49,15 @@ public class ImageProcessorApp {
             File selectedFile = fileChooser.getSelectedFile();
             try {
                 BufferedImage img = ImageIO.read(selectedFile);
+                long size = GraphLayout.parseInstance(img).totalSize();
+                System.out.println("img size: " + size + " bytes");
                 if (img != null) {
-                    byte[][][] imageArray = ImageConverter.bufferedImageToArray(img);
-                    int height = imageArray.length;
-                    int width = imageArray[0].length;
+                    size = GraphLayout.parseInstance(img).totalSize();
+                    System.out.println("imageArray size: " + size + " bytes");
+                    int height = img.getHeight();        // Correct: imageArray is [height][width][3]
+                    int width = img.getWidth();      // Correct: width is columns
 
-                    imageData.reset();
-                    imageData.setInitialImage(imageArray);
+                    imageData.setInitialImage(img);
 
                     functionLog.clear();
                     windowManager.clear();
@@ -64,14 +66,18 @@ public class ImageProcessorApp {
                     controlPanel.setFilename(fileName);
                     controlPanel.resetSourceImage();
 
-                    windowManager.createAndShowWindow(imageArray, "Input", 1, 0, fileName);
+                    windowManager.createAndShowWindow(img, "Input", 1, 0, fileName);
                     logFunction("Input - " + imageData.getCurrentSequenceNumber() + " ( " + fileName + " ) - " + width + " x " + height);
+
+                    // Force GC after loading
+                    System.gc();
                 } else {
                     showError(parent, "Failed to load image", "Error");
                 }
             } catch (IOException ex) {
                 showError(parent, "Error reading file: " + ex.getMessage(), "Error");
             }
+
         }
     }
 
@@ -118,7 +124,7 @@ public class ImageProcessorApp {
             }
 
             try {
-                BufferedImage img = ImageConverter.arrayToBufferedImage(imageData.getCurrentImage());
+                BufferedImage img = imageData.getCurrentImage();
                 boolean success = ImageIO.write(img, format, selectedFile);
 
                 if (success) {
@@ -141,19 +147,33 @@ public class ImageProcessorApp {
             return;
         }
 
-        byte[][][] currentImage = imageData.getCurrentImage();
-        byte[][][] result = ImageProcessingFunctions.posterize(currentImage);
+        logMemoryBefore("Posterize");
+
+        // Force GC before operation to ensure clean slate
+        System.gc();
+        Thread.yield(); // Give GC time to run
+
+        BufferedImage currentImage = imageData.getCurrentImage();
         int sourceSeq = imageData.getCurrentSequenceNumber();
         int newSeq = imageData.getNextSequenceNumber();
 
-        int height = currentImage.length;
-        int width = currentImage[0].length;
+        int height = currentImage.getHeight();
+        int width = currentImage.getWidth();
 
+        BufferedImage result = ImageProcessingFunctions.posterize(currentImage);
         imageData.addProcessedImage(result);
+
+        logMemoryAfter("Posterize", "before window creation");
+
         windowManager.createAndShowWindow(result, "Posterize", newSeq, sourceSeq);
         String logData = "Posterize - " + newSeq + " (from " + sourceSeq + ") - " + width + " x " + height;
         logFunction(logData);
         updateSourceLabel(logData);
+
+//        // Force GC after operation
+//        System.gc();
+//
+        logMemoryAfter("Posterize", "after window creation + GC");
     }
 
     public void applyMonochrome(JFrame parent) {
@@ -162,18 +182,25 @@ public class ImageProcessorApp {
             return;
         }
 
-        byte[][][] currentImage = imageData.getCurrentImage();
-        byte[][][] result = ImageProcessingFunctions.monochrome(currentImage);
+        logMemoryBefore("Monochrome");
+
+        BufferedImage currentImage = imageData.getCurrentImage();
+        BufferedImage result = ImageProcessingFunctions.monochrome(currentImage);
         int sourceSeq = imageData.getCurrentSequenceNumber();
         int newSeq = imageData.getNextSequenceNumber();
-        int height = currentImage.length;
-        int width = currentImage[0].length;
+        int height = result.getHeight();
+        int width = result.getWidth();
 
         imageData.addProcessedImage(result);
+
+        logMemoryAfter("Monochrome", "before window creation");
+
         windowManager.createAndShowWindow(result, "Monochrome", newSeq, sourceSeq);
         String logData = "Monochrome - " + newSeq + " (from " + sourceSeq + ") - " + width + " x " + height;
         logFunction(logData);
         updateSourceLabel(logData);
+
+        logMemoryAfter("Monochrome", "after window creation");
     }
 
     public void applyScale(JFrame parent) {
@@ -182,9 +209,9 @@ public class ImageProcessorApp {
             return;
         }
 
-        byte[][][] currentImage = imageData.getCurrentImage();
-        int currentWidth = currentImage[0].length;
-        int currentHeight = imageData.getCurrentImage().length;
+        BufferedImage currentImage = imageData.getCurrentImage();
+        int currentWidth = currentImage.getWidth();
+        int currentHeight = currentImage.getHeight();
 
         JPanel panel = new JPanel(new java.awt.GridLayout(2, 2, 5, 5));
         JTextField widthField = new JTextField(String.valueOf(currentWidth), 10);
@@ -210,7 +237,7 @@ public class ImageProcessorApp {
                     return;
                 }
 
-                byte[][][] scaled = ImageProcessingFunctions.scale(imageData.getCurrentImage(), newWidth, newHeight);
+                BufferedImage scaled = ImageProcessingFunctions.copyAndScale(currentImage, newWidth, newHeight);
                 int sourceSeq = imageData.getCurrentSequenceNumber();
                 int newSeq = imageData.getNextSequenceNumber();
 
@@ -241,9 +268,9 @@ public class ImageProcessorApp {
         }
 
         // Get current image dimensions
-        byte[][][] currentImage = imageData.getCurrentImage();
-        int imageHeight = currentImage.length;
-        int imageWidth = currentImage[0].length;
+        BufferedImage currentImage = imageData.getCurrentImage();
+        int imageHeight = currentImage.getHeight();
+        int imageWidth = currentImage.getWidth();
 
         // Prepopulate dimension dialog with image dimensions
         // Width and height match image dimensions in pixels (as millimeters)
@@ -259,11 +286,8 @@ public class ImageProcessorApp {
 
         double scalePercent = dimensionDialog.getScalePercent();
         double width = dimensionDialog.getWidth() * (scalePercent / 100.0);
-        ;
         double height = dimensionDialog.getHeight() * (scalePercent / 100.0);
-        ;
         double thickness = dimensionDialog.getThickness() * (scalePercent / 100.0);
-        ;
 
         boolean invertHeights = dimensionDialog.isInvertHeights();
         boolean flipLeftRight = dimensionDialog.isFlipLeftRight();
@@ -301,7 +325,7 @@ public class ImageProcessorApp {
             // Convert 2D RGB image to 3D voxel array
             System.out.println("\n--- IMAGE TO VOXEL CONVERSION ---");
             long voxelStart = System.nanoTime();
-            byte[][][] rgbImage = imageData.getCurrentImage();
+            BufferedImage rgbImage = imageData.getCurrentImage();
             boolean[][][] voxelData = convertImageToVoxels(rgbImage, invertHeights, flipLeftRight);
             long voxelTime = (System.nanoTime() - voxelStart) / 1_000_000;
             System.out.println("[TIMING] Image to voxel conversion: " + voxelTime + " ms");
@@ -394,11 +418,11 @@ public class ImageProcessorApp {
      * @param flipLeftRight If true, flip the image horizontally (mirror left-right)
      * @return 3D voxel array [width][height][depth] where false=empty, true=filled
      */
-    private boolean[][][] convertImageToVoxels(byte[][][] rgbImage, boolean invertHeights, boolean flipLeftRight) {
+    private boolean[][][] convertImageToVoxels(BufferedImage rgbImage, boolean invertHeights, boolean flipLeftRight) {
         long conversionStart = System.nanoTime();
 
-        int imgHeight = rgbImage.length;
-        int imgWidth = rgbImage[0].length;
+        int imgHeight = rgbImage.getHeight();
+        int imgWidth = rgbImage.getWidth();
 
         // Determine max depth based on the brightest pixel
         int maxDepth = 64; // Default depth for voxel extrusion
@@ -420,9 +444,12 @@ public class ImageProcessorApp {
 
         for (int y = 0; y < imgHeight; y++) {
             for (int x = 0; x < imgWidth; x++) {
-                int r = rgbImage[y][x][0] & 0xFF; // Mask to get 0-255
-                int g = rgbImage[y][x][1] & 0xFF;
-                int b = rgbImage[y][x][2] & 0xFF;
+
+                int rgb = rgbImage.getRGB(x, y);
+
+                int r = (rgb >> 16) & 0xFF;
+                int g = (rgb >> 8) & 0xFF;
+                int b = rgb & 0xFF;
 
                 // Calculate brightness (0-255)
                 int brightness = (r + g + b) / 3;
@@ -444,13 +471,6 @@ public class ImageProcessorApp {
                     voxels[voxelX][y][z] = true;
                     totalVoxelsFilled++;
                 }
-//try {
-//    int depth2 = Math.max(0,Math.min(maxDepth-1,depth));
-//    voxels[voxelX][y][depth2] = true;
-//    totalVoxelsFilled++;
-//    voxels[voxelX][y][0] = true;
-//    totalVoxelsFilled++;
-//}catch(Exception ex){System.out.println(ex.toString() + "\n" +"depth:"+depth);}
             }
         }
         long processTime = (System.nanoTime() - processStart) / 1_000_000;
@@ -479,9 +499,8 @@ public class ImageProcessorApp {
                 int selectedSeq = functionLog.extractSequenceNumber(logEntry);
 
                 if (selectedSeq > 0) {
-                    byte[][][] image = imageData.getImageBySequence(selectedSeq);
+                    BufferedImage image = imageData.getImageBySequence(selectedSeq);
                     if (image != null) {
-                        imageData.setCurrentImage(image);
                         imageData.setCurrentSequenceNumber(selectedSeq);
                         // Update source label to show selection
                         controlPanel.setSourceText(logEntry);
@@ -528,5 +547,25 @@ public class ImageProcessorApp {
 
     private void showInfo(JFrame parent, String message, String title) {
         JOptionPane.showMessageDialog(parent, message, title, JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    // ===== Memory Logging =====
+
+    private void logMemoryBefore(String operation) {
+        Runtime rt = Runtime.getRuntime();
+        long usedMB = (rt.totalMemory() - rt.freeMemory()) / 1024 / 1024;
+        long maxMB = rt.maxMemory() / 1024 / 1024;
+        long freeMB = maxMB - usedMB;
+        System.out.println(String.format("[MEMORY BEFORE %s] Used: %d MB, Free: %d MB, Max: %d MB (%.1f%% used)",
+                operation, usedMB, freeMB, maxMB, (usedMB * 100.0 / maxMB)));
+    }
+
+    private void logMemoryAfter(String operation, String stage) {
+        Runtime rt = Runtime.getRuntime();
+        long usedMB = (rt.totalMemory() - rt.freeMemory()) / 1024 / 1024;
+        long maxMB = rt.maxMemory() / 1024 / 1024;
+        long freeMB = maxMB - usedMB;
+        System.out.println(String.format("[MEMORY AFTER %s - %s] Used: %d MB, Free: %d MB, Max: %d MB (%.1f%% used)",
+                operation, stage, usedMB, freeMB, maxMB, (usedMB * 100.0 / maxMB)));
     }
 }

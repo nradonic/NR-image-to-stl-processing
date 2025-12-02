@@ -2,6 +2,7 @@ package imageManipulation;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -37,15 +38,15 @@ public class WindowManager {
         windowsBySequence.clear();
     }
 
-    public ImageDisplayWindow createAndShowWindow(byte[][][] imageArray, String functionName,
+    public ImageDisplayWindow createAndShowWindow(BufferedImage image, String functionName,
                                                   int seqNum, int sourceSeqNum, String fileName) {
         this.fileName = fileName;
-        return createAndShowWindow(imageArray, functionName, seqNum, sourceSeqNum);
+        return createAndShowWindow(image, functionName, seqNum, sourceSeqNum);
     }
 
-    public ImageDisplayWindow createAndShowWindow(byte[][][] imageArray, String functionName,
+    public ImageDisplayWindow createAndShowWindow(BufferedImage image, String functionName,
                                                   int seqNum, int sourceSeqNum) {
-        ImageDisplayWindow window = new ImageDisplayWindow(imageArray, functionName, seqNum, sourceSeqNum, fileName);
+        ImageDisplayWindow window = new ImageDisplayWindow(image, functionName, seqNum, sourceSeqNum, fileName);
         window.setVisible(true);
         addWindow(window);
         windowsBySequence.put(seqNum, window);
