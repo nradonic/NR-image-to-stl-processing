@@ -54,8 +54,8 @@ public class ImageProcessorApp {
                 if (img != null) {
                     size = GraphLayout.parseInstance(img).totalSize();
                     System.out.println("imageArray size: " + size + " bytes");
-                    int height = img.getHeight();        // Correct: imageArray is [height][width][3]
-                    int width = img.getWidth();      // Correct: width is columns
+                    int height = img.getHeight(); // Correct: imageArray is [height][width][3]
+                    int width = img.getWidth(); // Correct: width is columns
 
                     imageData.setInitialImage(img);
 
@@ -67,7 +67,8 @@ public class ImageProcessorApp {
                     controlPanel.resetSourceImage();
 
                     windowManager.createAndShowWindow(img, "Input", 1, 0, fileName);
-                    logFunction("Input - " + imageData.getCurrentSequenceNumber() + " ( " + fileName + " ) - " + width + " x " + height);
+                    logFunction("Input - " + imageData.getCurrentSequenceNumber() + " ( " + fileName + " ) - " + width
+                            + " x " + height);
 
                     // Force GC after loading
                     System.gc();
@@ -93,7 +94,7 @@ public class ImageProcessorApp {
         // Format selection panel
         JPanel formatPanel = new JPanel();
         formatPanel.add(new JLabel("Format:"));
-        JComboBox<String> formatCombo = new JComboBox<>(new String[]{"PNG", "JPG"});
+        JComboBox<String> formatCombo = new JComboBox<>(new String[] { "PNG", "JPG" });
         formatPanel.add(formatCombo);
         fileChooser.setAccessory(formatPanel);
 
@@ -285,11 +286,11 @@ public class ImageProcessorApp {
         double width = dimensionDialog.getWidth() * (scalePercent / 100.0);
         double height = dimensionDialog.getHeight() * (scalePercent / 100.0);
         double thickness = dimensionDialog.getThickness() * (scalePercent / 100.0);
+        int pixelClipping = dimensionDialog.getPixelClipping();
 
         boolean invertHeights = dimensionDialog.isInvertHeights();
         boolean flipLeftRight = dimensionDialog.isFlipLeftRight();
         final int sourceNumber = imageData.getCurrentSequenceNumber();
-
 
         // Show file chooser
         JFileChooser fileChooser = new JFileChooser();
@@ -323,7 +324,7 @@ public class ImageProcessorApp {
             System.out.println("\n--- IMAGE TO VOXEL CONVERSION ---");
             long voxelStart = System.nanoTime();
             BufferedImage rgbImage = imageData.getCurrentImage();
-            boolean[][][] voxelData = convertImageToVoxels(rgbImage, invertHeights, flipLeftRight);
+            boolean[][][] voxelData = convertImageToVoxels(rgbImage, invertHeights, flipLeftRight, pixelClipping);
             long voxelTime = (System.nanoTime() - voxelStart) / 1_000_000;
             System.out.println("[TIMING] Image to voxel conversion: " + voxelTime + " ms");
 
@@ -388,9 +389,10 @@ public class ImageProcessorApp {
                         boolean success = get();
                         if (success) {
                             showInfo(parent, "Successfully exported to:\n" + finalFile.getName(),
-                                    "Export Complete - Clipped to 1000x1000");
+                                    "Export Complete - Clipped to " + pixelClipping + "x" + pixelClipping);
                             logFunction("Export to STL - Source " + sourceNumber + " - " + finalFile.getName() +
-                                    " (" + width + " x " + height + " x " + thickness + "mm)" + " Clipped to 1000x1000");
+                                    " (" + width + " x " + height + " x " + thickness + "mm)"
+                                    + " Clipped to " + pixelClipping + "x" + pixelClipping);
                         } else {
                             showError(parent, "Failed to export STL file", "Export Error");
                         }
@@ -410,15 +412,17 @@ public class ImageProcessorApp {
      * Convert a 2D RGB image to a 3D boolean voxel array.
      * The brightness of each pixel determines its height in the Z dimension.
      *
-     * @param workImage   2D RGB image [height][width][RGB]
-     * @param invertHeights If true, black=tallest and white=shortest; if false, white=tallest and black=shortest
+     * @param workImage     2D RGB image [height][width][RGB]
+     * @param invertHeights If true, black=tallest and white=shortest; if false,
+     *                      white=tallest and black=shortest
      * @param flipLeftRight If true, flip the image horizontally (mirror left-right)
      * @return 3D voxel array [width][height][depth] where false=empty, true=filled
      */
-    private boolean[][][] convertImageToVoxels(BufferedImage workImage, boolean invertHeights, boolean flipLeftRight) {
+    private boolean[][][] convertImageToVoxels(BufferedImage workImage, boolean invertHeights, boolean flipLeftRight,
+            int pixelClipping) {
         long conversionStart = System.nanoTime();
 
-        BufferedImage rgbImage = ImageProcessingFunctions.scaleClipping(workImage, 1000, 1000);
+        BufferedImage rgbImage = ImageProcessingFunctions.scaleClipping(workImage, pixelClipping, pixelClipping);
         int imgHeight = rgbImage.getHeight();
         int imgWidth = rgbImage.getWidth();
 
@@ -461,10 +465,11 @@ public class ImageProcessorApp {
                 // Map brightness to voxel depth (0-255 -> 0-maxDepth)
                 int depth = (brightness * maxDepth) / 256;
 
-                // Calculate voxel X coordinate (flip if NOT requested - fixes backwards behavior)
+                // Calculate voxel X coordinate (flip if NOT requested - fixes backwards
+                // behavior)
                 int voxelX = flipLeftRight ? x : (imgWidth - 1 - x);
 
-//                Fill voxels from bottom to depth
+                // Fill voxels from bottom to depth
                 for (int z = 0; z < depth; z++) {
                     voxels[voxelX][y][z] = true;
                     totalVoxelsFilled++;
