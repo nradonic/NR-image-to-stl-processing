@@ -51,9 +51,9 @@ public class ImageData {
     }
 
     public void setCurrentSequenceNumber(int seqNum) {
-        this.currentSequenceNumber = seqNum;
+
         if (seqNum > 0 && seqNum < imageHistory.size()) {
-            currentSequenceNumber = seqNum;
+            this.currentSequenceNumber = seqNum;
             currentImage = imageHistory.get(seqNum);
         }
     }

@@ -554,8 +554,8 @@ public class ImageProcessorApp {
         long usedMB = (rt.totalMemory() - rt.freeMemory()) / 1024 / 1024;
         long maxMB = rt.maxMemory() / 1024 / 1024;
         long freeMB = maxMB - usedMB;
-        System.out.println(String.format("[MEMORY BEFORE %s] Used: %d MB, Free: %d MB, Max: %d MB (%.1f%% used)",
-                operation, usedMB, freeMB, maxMB, (usedMB * 100.0 / maxMB)));
+        System.out.printf("[MEMORY BEFORE %s] Used: %d MB, Free: %d MB, Max: %d MB (%.1f%% used)%n",
+                operation, usedMB, freeMB, maxMB, (usedMB * 100.0 / maxMB));
     }
 
     private void logMemoryAfter(String operation, String stage) {
@@ -563,7 +563,7 @@ public class ImageProcessorApp {
         long usedMB = (rt.totalMemory() - rt.freeMemory()) / 1024 / 1024;
         long maxMB = rt.maxMemory() / 1024 / 1024;
         long freeMB = maxMB - usedMB;
-        System.out.println(String.format("[MEMORY AFTER %s - %s] Used: %d MB, Free: %d MB, Max: %d MB (%.1f%% used)",
-                operation, stage, usedMB, freeMB, maxMB, (usedMB * 100.0 / maxMB)));
+        System.out.printf("[MEMORY AFTER %s - %s] Used: %d MB, Free: %d MB, Max: %d MB (%.1f%% used)%n",
+                operation, stage, usedMB, freeMB, maxMB, (usedMB * 100.0 / maxMB));
     }
 }
