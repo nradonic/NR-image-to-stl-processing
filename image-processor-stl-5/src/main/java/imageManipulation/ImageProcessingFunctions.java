@@ -17,7 +17,6 @@ public class ImageProcessingFunctions {
         int height = source.getHeight();
         int width = source.getWidth();
 
-
         int[] srcPixels = new int[width * height];
         source.getRGB(0, 0, width, height, srcPixels, 0, width);
         BufferedImage dst = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
@@ -59,10 +58,12 @@ public class ImageProcessingFunctions {
         int height = source.getHeight();
         int width = source.getWidth();
 
-        BufferedImage dst = new BufferedImage(width, height, source.getType());
+        BufferedImage dst = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 
-        int[] srcPixels = ((DataBufferInt) source.getRaster().getDataBuffer()).getData();
-        int[] dstPixels = ((DataBufferInt) dst.getRaster().getDataBuffer()).getData();
+        int[] srcPixels = new int[width * height];
+        int[] dstPixels = new int[width * height];
+
+        source.getRGB(0, 0, width, height, srcPixels, 0, width);
 
         for (int i = 0; i < srcPixels.length; i++) {
             int p = srcPixels[i];
@@ -75,6 +76,7 @@ public class ImageProcessingFunctions {
             int average = (r + g + b) / 3;
             dstPixels[i] = (a << 24) | (average << 16) | (average << 8) | average;
         }
+        dst.setRGB(0, 0, width, height, dstPixels, 0, width);
         return dst;
     }
 

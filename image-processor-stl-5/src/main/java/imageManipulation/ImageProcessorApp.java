@@ -170,9 +170,6 @@ public class ImageProcessorApp {
         logFunction(logData);
         updateSourceLabel(logData);
 
-//        // Force GC after operation
-//        System.gc();
-//
         logMemoryAfter("Posterize", "after window creation + GC");
     }
 
@@ -391,9 +388,9 @@ public class ImageProcessorApp {
                         boolean success = get();
                         if (success) {
                             showInfo(parent, "Successfully exported to:\n" + finalFile.getName(),
-                                    "Export Complete");
+                                    "Export Complete - Clipped to 1000x1000");
                             logFunction("Export to STL - Source " + sourceNumber + " - " + finalFile.getName() +
-                                    " (" + width + " x " + height + " x " + thickness + "mm)");
+                                    " (" + width + " x " + height + " x " + thickness + "mm)" + " Clipped to 1000x1000");
                         } else {
                             showError(parent, "Failed to export STL file", "Export Error");
                         }
@@ -413,14 +410,15 @@ public class ImageProcessorApp {
      * Convert a 2D RGB image to a 3D boolean voxel array.
      * The brightness of each pixel determines its height in the Z dimension.
      *
-     * @param rgbImage      2D RGB image [height][width][RGB]
+     * @param workImage   2D RGB image [height][width][RGB]
      * @param invertHeights If true, black=tallest and white=shortest; if false, white=tallest and black=shortest
      * @param flipLeftRight If true, flip the image horizontally (mirror left-right)
      * @return 3D voxel array [width][height][depth] where false=empty, true=filled
      */
-    private boolean[][][] convertImageToVoxels(BufferedImage rgbImage, boolean invertHeights, boolean flipLeftRight) {
+    private boolean[][][] convertImageToVoxels(BufferedImage workImage, boolean invertHeights, boolean flipLeftRight) {
         long conversionStart = System.nanoTime();
 
+        BufferedImage rgbImage = ImageProcessingFunctions.scaleClipping(workImage, 1000, 1000);
         int imgHeight = rgbImage.getHeight();
         int imgWidth = rgbImage.getWidth();
 

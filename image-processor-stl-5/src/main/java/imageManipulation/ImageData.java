@@ -30,13 +30,14 @@ public class ImageData {
     public void setInitialImage(BufferedImage image) {
         reset();
         addProcessedImage(image);
+        currentSequenceNumber = 1;
         logMemory("After loading image : <" + currentSequenceNumber + "> ");
     }
 
     public void addProcessedImage(BufferedImage image) {
         currentImage = image;
         imageHistory.add(image);
-        currentSequenceNumber = getNextSequenceNumber();
+        currentSequenceNumber = getNextSequenceNumber() - 1;
         logMemory("After adding image : <" + currentSequenceNumber + "> ");
 
     }
